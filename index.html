@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ノアの箱舟</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root{
+  --sky:#1E2A3C;
+  --sky-2:#2B3A50;
+  --panel:#243247;
+  --line:rgba(239,232,214,.14);
+  --ivory:#EFE8D6;
+  --muted:#A9B1BF;
+  --gold:#D9B45A;
+  --wood:#8B5A2B;
+  --wood-dark:#5A3818;
+  --water:#3B6EA8;
+  --leaf:#7FA35B;
+  --ng:#D96A5E;
+  --serif:"Shippori Mincho B1","Yu Mincho","Hiragino Mincho ProN",serif;
+  --sans:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--sky);color:var(--ivory);
+  font-family:var(--sans);font-size:16px;line-height:1.7;
+  padding-inline:16px;padding-block:20px 48px;min-height:100vh;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% 0%,rgba(217,180,90,.13),transparent 60%),
+    linear-gradient(180deg,var(--sky) 0%,var(--sky-2) 100%);
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap{max-width:560px;margin:0 auto}
+[hidden]{display:none!important}
+
+.hd{text-align:center;margin-bottom:16px}
+.eyebrow{font-size:12px;letter-spacing:.32em;color:var(--gold);margin:0 0 4px}
+h1{font-family:var(--serif);font-weight:800;font-size:clamp(34px,9vw,50px);letter-spacing:.08em;margin:0;line-height:1.2}
+.sub{color:var(--muted);font-size:14px;margin:6px 0 0}
+
+/* home */
+.ark-hero{display:block;width:min(100%,360px);height:auto;margin:6px auto 14px}
+.howto{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:18px}
+.howto h2{font-family:var(--serif);font-size:17px;margin:0 0 10px;letter-spacing:.08em;color:var(--gold)}
+.howto ol{margin:0;padding-left:1.3em;display:grid;gap:6px;font-size:14.5px}
+.howto li::marker{color:var(--gold);font-family:var(--serif)}
+.best{font-size:13px;color:var(--gold);letter-spacing:.12em;text-align:center;font-variant-numeric:tabular-nums;margin:0 0 12px}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{border:1px solid var(--gold);background:var(--gold);color:#2A1E08;font-weight:700;padding:12px 30px;border-radius:999px;letter-spacing:.08em;transition:transform .1s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--ivory);border-color:rgba(239,232,214,.3)}
+
+/* game */
+.hud{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.hud b{color:var(--ivory);font-weight:500}
+.hud .score{font-family:var(--serif);font-size:24px;color:var(--gold);font-variant-numeric:tabular-nums;font-weight:700;line-height:1}
+.roster{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.sp{display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 9px 3px 6px;font-size:16px;line-height:1;transition:background .2s,border-color .2s}
+.sp .d{display:inline-flex;gap:3px}
+.sp .d i{width:8px;height:8px;border-radius:50%;background:rgba(239,232,214,.2);display:block}
+.sp .d i.on{background:var(--gold)}
+.sp.done{background:rgba(217,180,90,.18);border-color:var(--gold)}
+.sp.lost{opacity:.4;text-decoration:line-through}
+.gauge{position:relative;height:8px;border-radius:4px;background:rgba(239,232,214,.12);margin-bottom:10px;overflow:hidden}
+.gauge i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--gold),var(--water));transition:width .2s linear}
+.gauge-l{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:4px}
+.stagewrap{position:relative;border-radius:14px;overflow:hidden;border:2px solid var(--wood-dark);box-shadow:0 14px 40px rgba(0,0,0,.45);background:#6f8f4b;margin-inline:auto;max-width:100%}
+body.in-game{padding-block:10px 20px}
+@media (max-width:700px){
+  body.in-game .hd,body.in-game footer{display:none}
+  .hud{margin-bottom:4px;font-size:12px}
+  .hud .score{font-size:20px}
+  .roster{gap:4px;margin-bottom:5px}
+  .sp{font-size:14px;padding:2px 7px 2px 5px}
+  .gauge{margin-bottom:6px;height:6px}
+  .ctl{margin-top:6px;font-size:11.5px}
+}
+canvas{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.toast{
+  position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+  font-family:var(--serif);font-size:clamp(20px,5.6vw,30px);font-weight:800;letter-spacing:.1em;
+  color:var(--ivory);text-shadow:0 2px 14px rgba(0,0,0,.7);pointer-events:none;opacity:0;transition:opacity .3s;text-align:center;
+}
+.toast.show{opacity:1}
+.overlay{
+  position:absolute;inset:0;background:rgba(20,28,42,.82);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:24px;gap:6px;
+}
+.overlay h3{font-family:var(--serif);font-size:26px;margin:0;letter-spacing:.12em;color:var(--gold)}
+.overlay p{margin:0;font-size:14.5px}
+.overlay .n{font-family:var(--serif);font-size:44px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.overlay .btn{margin-top:12px}
+.ctl{color:var(--muted);font-size:12.5px;text-align:center;margin:10px 0 0}
+
+/* result */
+.res{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 22px 26px;text-align:center;position:relative;overflow:hidden}
+.rainbow{width:min(100%,300px);height:auto;display:block;margin:0 auto 6px}
+.res .big{font-family:var(--serif);font-size:clamp(56px,16vw,88px);font-weight:800;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums;margin:0}
+.res .unit{color:var(--muted);font-size:14px;letter-spacing:.2em}
+.newbest{display:inline-block;font-size:12px;letter-spacing:.2em;color:#2A1E08;background:var(--gold);padding:3px 12px;border-radius:999px;margin-top:8px}
+.stats{display:flex;justify-content:center;gap:28px;margin:20px 0 6px;flex-wrap:wrap}
+.stats div{font-size:12.5px;color:var(--muted);letter-spacing:.1em}
+.stats b{display:block;font-family:var(--serif);font-size:24px;color:var(--ivory);font-variant-numeric:tabular-nums}
+.verse{font-family:var(--serif);font-size:17px;line-height:1.9;margin:22px auto 4px;max-width:28em;text-wrap:balance}
+.vref{color:var(--gold);font-size:13px;margin:0 0 8px}
+
+footer{margin-top:32px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header class="hd">
+    <p class="eyebrow">創世記 6–9章</p>
+    <h1>ノアの箱舟</h1>
+    <p class="sub">雨が降りだす前に、動物を二匹ずつ箱舟へ。</p>
+  </header>
+
+  <!-- HOME -->
+  <section id="home">
+    <svg class="ark-hero" viewBox="0 0 360 150" aria-hidden="true">
+      <defs><linearGradient id="hw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A8713A"/><stop offset="1" stop-color="#5A3818"/></linearGradient></defs>
+      <ellipse cx="180" cy="138" rx="170" ry="8" fill="rgba(0,0,0,.3)"/>
+      <path d="M40 92 L320 92 L290 132 L70 132 Z" fill="url(#hw)"/>
+      <path d="M40 92 L320 92 L290 132 L70 132 Z" fill="none" stroke="#3E2610" stroke-width="2"/>
+      <g stroke="#3E2610" stroke-width="1.2" opacity=".55"><line x1="56" y1="104" x2="306" y2="104"/><line x1="64" y1="116" x2="298" y2="116"/></g>
+      <rect x="92" y="52" width="176" height="40" fill="#8B5A2B" stroke="#3E2610" stroke-width="2"/>
+      <path d="M80 52 L180 18 L280 52 Z" fill="#5A3818" stroke="#3E2610" stroke-width="2"/>
+      <rect x="166" y="64" width="28" height="28" fill="#2A1E08"/>
+      <rect x="120" y="62" width="16" height="12" fill="#D9B45A" opacity=".85"/><rect x="224" y="62" width="16" height="12" fill="#D9B45A" opacity=".85"/>
+      <text x="180" y="44" font-size="22" text-anchor="middle">🕊️</text>
+    </svg>
+    <div class="howto">
+      <h2>あそびかた</h2>
+      <ol>
+        <li>スマホは画面のどこでもいいので指で押したまま、動かしたい方向へずらすとノアが歩きます。PCはマウスで押した場所へ歩く、または矢印キー。</li>
+        <li>動物に近づくと、あとをついてきます。いちどに連れて歩けるのは6匹まで。</li>
+        <li>箱舟の前の板まで連れて行くと乗船。同じ動物が2匹そろうと「つがい」完成。</li>
+        <li>雨が降ると低い土地から水がのぼり、取り残された動物は流されます。高台へ急いで。</li>
+      </ol>
+    </div>
+    <p class="best" id="home-best"></p>
+    <div class="actions"><button class="btn" id="btn-start">はじめる</button></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" hidden>
+    <div class="hud">
+      <div><b id="g-stage">第1の日</b>　<span id="g-pairs"></span></div>
+      <div class="score" id="g-score">0</div>
+    </div>
+    <div class="roster" id="roster"></div>
+    <div class="gauge-l"><span id="g-phase">晴れ</span><span id="g-time"></span></div>
+    <div class="gauge"><i id="g-gauge"></i></div>
+    <div class="stagewrap">
+      <canvas id="cv" width="600" height="760"></canvas>
+      <div class="toast" id="toast"></div>
+      <div class="overlay" id="overlay" hidden>
+        <h3 id="o-title"></h3>
+        <div class="n" id="o-n"></div>
+        <p id="o-text"></p>
+        <button class="btn" id="btn-cont">つぎへ</button>
+      </div>
+    </div>
+    <p class="ctl"><span id="ctl-hint">指で押したまま動かしたい方向へ</span>　　<button class="btn ghost" id="btn-quit" style="padding:4px 14px;font-size:12px">やめる</button></p>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" hidden>
+    <div class="res">
+      <svg class="rainbow" viewBox="0 0 300 150" aria-hidden="true">
+        <g fill="none" stroke-width="10" stroke-linecap="round">
+          <path d="M20 145 A130 130 0 0 1 280 145" stroke="#D96A5E"/>
+          <path d="M32 145 A118 118 0 0 1 268 145" stroke="#E4A24A"/>
+          <path d="M44 145 A106 106 0 0 1 256 145" stroke="#D9B45A"/>
+          <path d="M56 145 A94 94 0 0 1 244 145" stroke="#7FA35B"/>
+          <path d="M68 145 A82 82 0 0 1 232 145" stroke="#4E86C3"/>
+          <path d="M80 145 A70 70 0 0 1 220 145" stroke="#8A6BB8"/>
+        </g>
+      </svg>
+      <p class="eyebrow">四十日四十夜ののち</p>
+      <p class="big" id="r-score">0</p>
+      <div class="unit">点</div>
+      <div id="r-best"></div>
+      <div class="stats">
+        <div>乗せたつがい<b id="r-pairs"></b></div>
+        <div>流された動物<b id="r-lost"></b></div>
+        <div>自己ベスト<b id="r-hi"></b></div>
+      </div>
+      <p class="verse">わたしは雲の中に、にじを置く。これがわたしと地との間の契約のしるしとなる。</p>
+      <p class="vref">創世記 9:13（口語訳）</p>
+      <div class="actions">
+        <button class="btn ghost" id="btn-home">タイトルへ</button>
+        <button class="btn" id="btn-again">もう一度</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>聖句：口語訳聖書（日本聖書協会 1955年・パブリックドメイン）</footer>
+</div>
+
+<script>
+/* ====== 定数 ====== */
+const W=600,H=760,CELL=20,COLS=W/CELL,ROWS=H/CELL;
+const ARK={x:190,y:36,w:220,h:118};
+const GATE={x:262,y:154,w:76,h:52};
+const GATE_C={x:GATE.x+GATE.w/2,y:GATE.y+GATE.h/2};
+const PEAK={x:300,y:120};
+const MAX_FOLLOW=6;
+const SPECIES=[
+ {n:"ひつじ",e:"🐑",s:0.9},{n:"うし",e:"🐄",s:0.7},{n:"ぞう",e:"🐘",s:0.6},{n:"きりん",e:"🦒",s:0.9},
+ {n:"ライオン",e:"🦁",s:1.2},{n:"うさぎ",e:"🐇",s:1.7},{n:"かめ",e:"🐢",s:0.4},{n:"さる",e:"🐒",s:1.4},
+ {n:"しまうま",e:"🦓",s:1.2},{n:"らくだ",e:"🐫",s:0.8},{n:"にわとり",e:"🐓",s:1.1},{n:"やぎ",e:"🐐",s:1.1},
+ {n:"しか",e:"🦌",s:1.4},{n:"ぶた",e:"🐖",s:0.8},{n:"うま",e:"🐎",s:1.6},
+];
+const STAGES=[
+ {name:"第1の日",n:5,dry:14,rain:52,spd:1.0},
+ {name:"第2の日",n:7,dry:11,rain:50,spd:1.15},
+ {name:"第3の日",n:9,dry:9,rain:46,spd:1.3},
+];
+
+/* ====== 地形 ====== */
+const HG=[];
+function height(x,y){
+  const d=Math.hypot(x-PEAK.x,y-PEAK.y);
+  let h=1-d/700+0.12*Math.sin(x/53)*Math.cos(y/61)+0.06*Math.sin((x+y)/37);
+  return Math.max(0,Math.min(1,h));
+}
+for(let r=0;r<ROWS;r++){HG[r]=[];for(let c=0;c<COLS;c++)HG[r][c]=height(c*CELL+CELL/2,r*CELL+CELL/2)}
+const cellH=(x,y)=>{const c=Math.min(COLS-1,Math.max(0,x/CELL|0)),r=Math.min(ROWS-1,Math.max(0,y/CELL|0));return HG[r][c]};
+const patches=[];{let s=7;const rnd=()=>{s=(s*9301+49297)%233280;return s/233280};
+ for(let i=0;i<40;i++)patches.push({x:rnd()*W,y:200+rnd()*(H-200),rx:14+rnd()*36,ry:8+rnd()*18,k:rnd()<.5?0:1})}
+// 地面は一度だけ描いてキャッシュ
+const ground=document.createElement("canvas");ground.width=W;ground.height=H;
+{
+  const g=ground.getContext("2d");
+  g.fillStyle="#7B9A55";g.fillRect(0,0,W,H);
+  g.fillStyle="#6C8A48";patches.forEach(p=>{if(p.k){g.beginPath();g.ellipse(p.x,p.y,p.rx,p.ry,0,0,Math.PI*2);g.fill()}});
+  g.fillStyle="#89A862";patches.forEach(p=>{if(!p.k){g.beginPath();g.ellipse(p.x,p.y,p.rx,p.ry,0,0,Math.PI*2);g.fill()}});
+  g.strokeStyle="rgba(60,80,40,.25)";g.lineWidth=1.5;
+  [0.55,0.7,0.85].forEach(v=>{g.beginPath();for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){if(HG[r][c]>=v&&(r===0||HG[r-1][c]<v)){g.moveTo(c*CELL,r*CELL);g.lineTo(c*CELL+CELL,r*CELL)}}g.stroke()});
+}
+
+/* ====== 状態 ====== */
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d");
+const store={get(k){try{return JSON.parse(localStorage.getItem("noah:"+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("noah:"+k,JSON.stringify(v))}catch(e){}}};
+let G=null,raf=0,last=0;
+const keys={};let pointer=null,joy=null;
+const JOY_DEAD=8,JOY_FULL=42,JOY_MAX=60;
+
+function show(s){
+  ["home","game","result"].forEach(x=>$(x).hidden=(x!==s));
+  document.body.classList.toggle("in-game",s==="game");
+  window.scrollTo({top:0});
+  if(s==="game")requestAnimationFrame(fitCanvas);
+}
+function toast(msg,ms=1800){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),ms)}
+
+function newGame(){G={stage:0,score:0,pairsTotal:0,lost:0};newStage()}
+function newStage(){
+  const st=STAGES[G.stage];
+  const sp=[];const pool=SPECIES.slice();
+  for(let i=0;i<st.n;i++)sp.push(pool.splice(Math.random()*pool.length|0,1)[0]);
+  const animals=[];
+  sp.forEach((s,si)=>{for(let k=0;k<2;k++){
+    let x,y,tries=0;
+    do{x=30+Math.random()*(W-60);y=240+Math.random()*(H-280);tries++}while(tries<50&&(cellH(x,y)<0.08||cellH(x,y)>0.7));
+    animals.push({sp:si,x,y,vx:0,vy:0,face:1,t:Math.random()*2,follow:false,boarded:false,lost:false,wet:0,speed:(28+Math.random()*22)*s.s*st.spd});
+  }});
+  G.st=st;G.species=sp;G.animals=animals;G.count=sp.map(()=>0);G.pairs=0;
+  G.noah={x:300,y:230,face:1,walking:0};G.trail=[{x:300,y:230}];G.followers=[];
+  G.t=0;G.L=0;G.raining=false;G.done=false;G.pops=[];G.drops=[];G.doorClosed=false;G.endT=0;
+  buildRoster();$("g-stage").textContent=st.name;$("g-score").textContent=G.score;
+  $("overlay").hidden=true;
+  toast(st.name+"　" + st.n+"種類のつがいを箱舟へ",2200);
+  last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function buildRoster(){
+  const r=$("roster");r.innerHTML="";
+  G.species.forEach((s,i)=>{const d=document.createElement("div");d.className="sp";d.id="sp"+i;d.innerHTML=`<span></span><span class="d"><i></i><i></i></span>`;d.firstChild.textContent=s.e;d.title=s.n;r.appendChild(d)});
+  updRoster();
+}
+function updRoster(){
+  G.species.forEach((s,i)=>{const d=$("sp"+i);const dots=d.querySelectorAll("i");dots.forEach((x,k)=>x.classList.toggle("on",G.count[i]>k));
+    d.classList.toggle("done",G.count[i]>=2);
+    const alive=G.animals.filter(a=>a.sp===i&&!a.lost).length;d.classList.toggle("lost",alive<2&&G.count[i]<2)});
+  $("g-pairs").textContent=`つがい ${G.pairs} / ${G.species.length}`;
+}
+
+/* ====== 更新 ====== */
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!G.done)update(dt);else G.endT+=dt;
+  draw();
+  if(G.done&&G.endT>1.2&&$("overlay").hidden)stageOverlay();
+  raf=requestAnimationFrame(loop);
+}
+function update(dt){
+  const st=G.st;G.t+=dt;
+  const wasRain=G.raining;
+  G.raining=G.t>st.dry;
+  if(G.raining&&!wasRain)toast("雨が降りはじめた！");
+  G.L=G.raining?Math.min(1,(G.t-st.dry)/st.rain):0;
+  const remain=Math.max(0,G.raining?st.rain-(G.t-st.dry):st.dry-G.t);
+  $("g-phase").textContent=G.raining?"洪水":"晴れ";
+  $("g-time").textContent=(G.raining?"水位 "+Math.round(G.L*100)+"%　":"雨まで ")+Math.ceil(remain)+"秒";
+  $("g-gauge").style.width=(G.raining?G.L*100:0)+"%";
+
+  // ノア移動
+  const n=G.noah;let dx=0,dy=0;
+  if(keys.ArrowLeft||keys.a)dx-=1;if(keys.ArrowRight||keys.d)dx+=1;if(keys.ArrowUp||keys.w)dy-=1;if(keys.ArrowDown||keys.s)dy+=1;
+  let mag=1;
+  if(pointer){const px=pointer.x-n.x,py=pointer.y-n.y;const d=Math.hypot(px,py);if(d>8){dx=px/d;dy=py/d}}
+  if(joy){
+    let jx=joy.x-joy.ox,jy=joy.y-joy.oy;const d=Math.hypot(jx,jy);
+    if(d>JOY_MAX){joy.ox=joy.x-jx/d*JOY_MAX;joy.oy=joy.y-jy/d*JOY_MAX}
+    if(d>JOY_DEAD){dx=jx/d;dy=jy/d;mag=Math.min(1,(d-JOY_DEAD)/(JOY_FULL-JOY_DEAD))}
+  }
+  const len=Math.hypot(dx,dy);
+  if(len>0){
+    dx/=len;dy/=len;
+    const depth=G.L-cellH(n.x,n.y);
+    const sp=170*(depth>0.02?0.45:1)*mag;
+    let nx=Math.max(14,Math.min(W-14,n.x+dx*sp*dt)),ny=Math.max(ARK.y+ARK.h-6,Math.min(H-14,n.y+dy*sp*dt));
+    // 箱舟本体には入れない
+    if(ny<ARK.y+ARK.h+10&&nx>ARK.x&&nx<ARK.x+ARK.w&&!(nx>GATE.x&&nx<GATE.x+GATE.w))ny=Math.max(ny,ARK.y+ARK.h+10);
+    n.x=nx;n.y=ny;if(dx!==0)n.face=dx<0?-1:1;n.walking+=dt*10;
+    const lt=G.trail[G.trail.length-1];
+    if(Math.hypot(n.x-lt.x,n.y-lt.y)>3){G.trail.push({x:n.x,y:n.y});if(G.trail.length>300)G.trail.shift()}
+  }
+  // 乗船
+  if(n.x>GATE.x&&n.x<GATE.x+GATE.w&&n.y>GATE.y&&n.y<GATE.y+GATE.h&&G.followers.length){
+    let newPairs=0;
+    G.followers.forEach(a=>{a.boarded=true;a.follow=false;G.count[a.sp]++;if(G.count[a.sp]===2){newPairs++;G.pairs++;G.score+=100}});
+    G.pops.push({x:GATE_C.x,y:GATE.y,text:`+${G.followers.length}匹乗船`,t:0});
+    if(newPairs)G.pops.push({x:GATE_C.x,y:GATE.y-26,text:`つがい +${newPairs*100}`,t:0,gold:true});
+    G.followers=[];updRoster();$("g-score").textContent=G.score;
+    if(G.pairs===G.species.length)endStage(true);
+  }
+  // 動物
+  G.animals.forEach(a=>{
+    if(a.boarded||a.lost)return;
+    if(!a.follow){
+      const d=Math.hypot(a.x-n.x,a.y-n.y);
+      if(d<30&&G.followers.length<MAX_FOLLOW){a.follow=true;G.followers.push(a);G.pops.push({x:a.x,y:a.y-20,text:G.species[a.sp].n,t:0});return}
+      a.t-=dt;
+      const depth=G.L-cellH(a.x,a.y);
+      if(a.t<=0){
+        a.t=0.8+Math.random()*2;
+        if(depth>-0.1){const ux=PEAK.x-a.x,uy=PEAK.y-a.y,l=Math.hypot(ux,uy);a.vx=ux/l+(Math.random()-.5)*.8;a.vy=uy/l+(Math.random()-.5)*.8}
+        else if(Math.random()<.3){a.vx=0;a.vy=0}
+        else{const ang=Math.random()*Math.PI*2;a.vx=Math.cos(ang);a.vy=Math.sin(ang)}
+      }
+      let nx=a.x+a.vx*a.speed*dt,ny=a.y+a.vy*a.speed*dt;
+      if(nx<16||nx>W-16)a.vx*=-1;if(ny<ARK.y+ARK.h+24||ny>H-16)a.vy*=-1;
+      nx=Math.max(16,Math.min(W-16,nx));ny=Math.max(ARK.y+ARK.h+24,Math.min(H-16,ny));
+      a.x=nx;a.y=ny;if(Math.abs(a.vx)>.1)a.face=a.vx<0?-1:1;
+      if(depth>0.02){a.wet+=dt;if(a.wet>2.4){a.lost=true;G.lost++;G.pops.push({x:a.x,y:a.y-10,text:"流された…",t:0,bad:true});updRoster()}}
+      else a.wet=Math.max(0,a.wet-dt*2);
+    }
+  });
+  // 追従
+  G.followers.forEach((a,i)=>{
+    const p=trailPoint((i+1)*30);
+    const k=Math.min(1,dt*9);a.x+=(p.x-a.x)*k;a.y+=(p.y-a.y)*k;
+    if(Math.abs(p.x-a.x)>0.5)a.face=p.x<a.x?-1:1;
+  });
+  // 雨粒
+  if(G.raining){for(let i=0;i<6;i++)G.drops.push({x:Math.random()*W,y:-20,v:520+Math.random()*200});
+    G.drops.forEach(d=>d.y+=d.v*dt);G.drops=G.drops.filter(d=>d.y<H+20)}
+  G.pops.forEach(p=>p.t+=dt);G.pops=G.pops.filter(p=>p.t<1.4);
+  if(G.L>=1)endStage(false);
+}
+function trailPoint(back){
+  const t=G.trail;let acc=0;
+  for(let i=t.length-1;i>0;i--){
+    const a=t[i],b=t[i-1],seg=Math.hypot(a.x-b.x,a.y-b.y);
+    if(acc+seg>=back){const f=(back-acc)/seg;return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f}}
+    acc+=seg;
+  }
+  return t[0];
+}
+function endStage(all){
+  if(G.done)return;G.done=true;G.doorClosed=true;pointer=null;joy=null;activePid=null;
+  const st=G.st;
+  let bonus=0;
+  if(all){const remain=Math.max(0,G.raining?st.rain-(G.t-st.dry):st.dry-G.t+st.rain);bonus=Math.round(remain)*5;G.score+=bonus}
+  G.stageBonus=bonus;G.stageAll=all;
+  G.pairsTotal+=G.pairs;$("g-score").textContent=G.score;
+  toast(all?"主は彼のうしろの戸を閉ざされた":"水はますますみなぎった",2400);
+}
+function stageOverlay(){
+  const o=$("overlay");o.hidden=false;
+  $("o-title").textContent=G.stageAll?"みな乗りこんだ":"水が満ちた";
+  $("o-n").textContent=`${G.pairs} / ${G.species.length} つがい`;
+  $("o-text").textContent=G.stageAll?`早さのボーナス +${G.stageBonus}点（創世記 7:16）`:(G.pairs?"間に合った動物たちは箱舟の中で守られた。":"次はもっと早く高台へ。");
+  $("btn-cont").textContent=G.stage<STAGES.length-1?"つぎの日へ":"結果を見る";
+}
+
+/* ====== 描画 ====== */
+function draw(){
+  const L=G.L,t=G.t;
+  // 空・地面
+  const storm=G.raining?Math.min(1,(t-G.st.dry)/8):0;
+  ctx.drawImage(ground,0,0);
+  // 水
+  if(L>0){
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+      const d=L-HG[r][c];if(d<=0)continue;
+      const a=Math.min(0.92,0.45+d*1.6);
+      const wave=Math.sin(t*2+c*.7+r*.4)*2;
+      ctx.fillStyle=`rgba(59,110,168,${a})`;ctx.fillRect(c*CELL-1,r*CELL-1+wave*.3,CELL+2,CELL+2);
+      if(d<0.06){ctx.fillStyle="rgba(230,240,250,.35)";ctx.fillRect(c*CELL,r*CELL+wave,CELL,2)}
+    }
+  }
+  // 箱舟
+  drawArk();
+  // 動物・ノア（y順）
+  const ents=G.animals.filter(a=>!a.boarded&&!a.lost).map(a=>({y:a.y,f:()=>drawAnimal(a)}));
+  ents.push({y:G.noah.y,f:drawNoah});
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+  // 雨・暗さ
+  if(storm>0){ctx.fillStyle=`rgba(18,26,48,${storm*0.32})`;ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle="rgba(210,225,245,.45)";ctx.lineWidth=1.2;ctx.beginPath();G.drops.forEach(d=>{ctx.moveTo(d.x,d.y);ctx.lineTo(d.x-3,d.y+16)});ctx.stroke()}
+  // ポップ
+  ctx.textAlign="center";ctx.font="bold 15px "+getComputedStyle(document.body).fontFamily;
+  G.pops.forEach(p=>{ctx.globalAlpha=1-p.t/1.4;ctx.fillStyle=p.bad?"#FFB3AB":p.gold?"#F2CF6E":"#FFFFFF";ctx.strokeStyle="rgba(0,0,0,.6)";ctx.lineWidth=3;
+    const y=p.y-p.t*28;ctx.strokeText(p.text,p.x,y);ctx.fillText(p.text,p.x,y)});
+  ctx.globalAlpha=1;
+  // バーチャルスティック
+  if(joy){
+    let jx=joy.x-joy.ox,jy=joy.y-joy.oy;const d=Math.hypot(jx,jy);
+    if(d>JOY_FULL){jx=jx/d*JOY_FULL;jy=jy/d*JOY_FULL}
+    ctx.strokeStyle="rgba(239,232,214,.55)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(joy.ox,joy.oy,JOY_FULL,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle="rgba(239,232,214,.18)";ctx.fill();
+    ctx.fillStyle="rgba(217,180,90,.85)";ctx.beginPath();ctx.arc(joy.ox+jx,joy.oy+jy,16,0,Math.PI*2);ctx.fill();
+  }
+}
+function drawArk(){
+  const {x,y,w,h}=ARK;
+  ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(x+w/2,y+h+6,w/2+10,10,0,0,Math.PI*2);ctx.fill();
+  // 船体
+  const g=ctx.createLinearGradient(0,y+60,0,y+h);g.addColorStop(0,"#A8713A");g.addColorStop(1,"#5A3818");
+  ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x-10,y+62);ctx.lineTo(x+w+10,y+62);ctx.lineTo(x+w-14,y+h);ctx.lineTo(x+14,y+h);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#3E2610";ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle="rgba(62,38,16,.5)";ctx.lineWidth=1;[76,90,104].forEach(o=>{ctx.beginPath();ctx.moveTo(x,y+o);ctx.lineTo(x+w,y+o);ctx.stroke()});
+  // 上屋
+  ctx.fillStyle="#8B5A2B";ctx.fillRect(x+30,y+26,w-60,36);ctx.strokeStyle="#3E2610";ctx.lineWidth=2;ctx.strokeRect(x+30,y+26,w-60,36);
+  ctx.fillStyle="#5A3818";ctx.beginPath();ctx.moveTo(x+20,y+26);ctx.lineTo(x+w/2,y);ctx.lineTo(x+w-20,y+26);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle="#D9B45A";ctx.globalAlpha=.85;ctx.fillRect(x+48,y+36,16,12);ctx.fillRect(x+w-64,y+36,16,12);ctx.globalAlpha=1;
+  // 戸口と板
+  ctx.fillStyle=G.doorClosed?"#5A3818":"#2A1E08";ctx.fillRect(x+w/2-16,y+70,32,h-70);
+  if(G.doorClosed){ctx.strokeStyle="#3E2610";ctx.beginPath();ctx.moveTo(x+w/2,y+70);ctx.lineTo(x+w/2,y+h);ctx.stroke()}
+  const gg=ctx.createLinearGradient(0,GATE.y,0,GATE.y+GATE.h);gg.addColorStop(0,"#B8844C");gg.addColorStop(1,"#8B5A2B");
+  ctx.fillStyle=gg;ctx.beginPath();ctx.moveTo(GATE.x+18,GATE.y-6);ctx.lineTo(GATE.x+GATE.w-18,GATE.y-6);ctx.lineTo(GATE.x+GATE.w,GATE.y+GATE.h);ctx.lineTo(GATE.x,GATE.y+GATE.h);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#3E2610";ctx.lineWidth=2;ctx.stroke();
+  // 乗船中の動物の顔を窓に
+  const onboard=G.animals.filter(a=>a.boarded).slice(-6);
+  ctx.font="14px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";ctx.textAlign="center";
+  onboard.forEach((a,i)=>ctx.fillText(G.species[a.sp].e,x+62+i*18,y+56));
+  if(!G.doorClosed){const pulse=0.5+0.5*Math.sin(G.t*4);ctx.strokeStyle=`rgba(217,180,90,${0.35+pulse*0.4})`;ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.strokeRect(GATE.x-4,GATE.y-10,GATE.w+8,GATE.h+14);ctx.setLineDash([])}
+}
+function drawAnimal(a){
+  const depth=G.L-cellH(a.x,a.y);
+  ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(a.x,a.y+10,13,5,0,0,Math.PI*2);ctx.fill();
+  ctx.save();ctx.translate(a.x,a.y);ctx.scale(a.face,1);
+  const bob=a.follow?Math.sin(G.t*10+a.x)*1.5:0;
+  ctx.font="28px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(G.species[a.sp].e,0,bob);ctx.restore();ctx.textBaseline="alphabetic";
+  if(a.wet>0&&!a.follow){ctx.font="bold 18px sans-serif";ctx.fillStyle="#FF6B5E";ctx.strokeStyle="rgba(0,0,0,.7)";ctx.lineWidth=3;ctx.textAlign="center";ctx.strokeText("！",a.x,a.y-22);ctx.fillText("！",a.x,a.y-22)}
+  if(depth>0.02){ctx.fillStyle="rgba(59,110,168,.6)";ctx.fillRect(a.x-16,a.y+2,32,12)}
+}
+function drawNoah(){
+  const n=G.noah;const sw=Math.sin(n.walking)*3;
+  ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(n.x,n.y+14,12,5,0,0,Math.PI*2);ctx.fill();
+  ctx.save();ctx.translate(n.x,n.y);ctx.scale(n.face,1);
+  // 杖
+  ctx.strokeStyle="#5A3818";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(12,-12);ctx.lineTo(12,16);ctx.stroke();
+  // 衣
+  ctx.fillStyle="#7A4E9C";ctx.beginPath();ctx.moveTo(-10,-4);ctx.lineTo(10,-4);ctx.lineTo(13,14);ctx.lineTo(-13,14);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#D9B45A";ctx.fillRect(-11,2,22,3);
+  // 足
+  ctx.fillStyle="#3E2610";ctx.fillRect(-8+sw,13,6,4);ctx.fillRect(2-sw,13,6,4);
+  // 頭とひげ
+  ctx.fillStyle="#E8C39E";ctx.beginPath();ctx.arc(0,-12,8,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#EFE8D6";ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(7,-10);ctx.lineTo(0,2);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#C9BFB0";ctx.beginPath();ctx.arc(0,-16,8,Math.PI,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#2A1E08";ctx.fillRect(2,-14,2,2);
+  ctx.restore();
+  // 連れている数
+  if(G.followers.length){ctx.font="bold 12px sans-serif";ctx.fillStyle="#fff";ctx.strokeStyle="rgba(0,0,0,.6)";ctx.lineWidth=3;ctx.textAlign="center";const s=`${G.followers.length}/${MAX_FOLLOW}`;ctx.strokeText(s,n.x,n.y-28);ctx.fillText(s,n.x,n.y-28)}
+}
+
+/* ====== 入力 ====== */
+function canvasPos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}}
+let activePid=null;
+cv.addEventListener("pointerdown",e=>{
+  if(!G||G.done||activePid!==null)return;
+  activePid=e.pointerId;cv.setPointerCapture(e.pointerId);
+  const p=canvasPos(e);
+  if(e.pointerType==="mouse"){pointer=p}else{joy={ox:p.x,oy:p.y,x:p.x,y:p.y}}
+  e.preventDefault();
+});
+cv.addEventListener("pointermove",e=>{
+  if(e.pointerId!==activePid)return;
+  const p=canvasPos(e);if(pointer)pointer=p;if(joy){joy.x=p.x;joy.y=p.y}
+  e.preventDefault();
+});
+["pointerup","pointercancel","lostpointercapture"].forEach(ev=>cv.addEventListener(ev,e=>{if(e.pointerId===activePid||ev==="lostpointercapture"){pointer=null;joy=null;activePid=null}}));
+cv.addEventListener("contextmenu",e=>e.preventDefault());
+cv.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
+cv.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+
+/* 盤面を画面に収める */
+function fitCanvas(){
+  if($("game").hidden)return;
+  const wrap=cv.parentElement,host=wrap.parentElement;
+  wrap.style.width="";
+  const maxW=host.clientWidth;
+  const vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+  const top=wrap.getBoundingClientRect().top;
+  const avail=vh-top-52;
+  let w=Math.min(maxW,avail*W/H);
+  w=Math.max(Math.min(maxW,280),w);
+  wrap.style.width=Math.floor(w)+"px";
+}
+window.addEventListener("resize",fitCanvas);
+window.addEventListener("orientationchange",()=>setTimeout(fitCanvas,150));
+if(window.visualViewport)window.visualViewport.addEventListener("resize",fitCanvas);
+const isTouch=matchMedia("(pointer:coarse)").matches;
+$("ctl-hint").textContent=isTouch?"画面を押したまま、動かしたい方向へ指をずらす":"押した場所へ歩く／矢印キー・WASD";
+document.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","a","d","w","s"].includes(e.key)){keys[e.key]=true;if($("game").hidden===false)e.preventDefault()}});
+document.addEventListener("keyup",e=>{keys[e.key]=false});
+window.addEventListener("blur",()=>{for(const k in keys)keys[k]=false;pointer=null});
+
+/* ====== 画面遷移 ====== */
+function homeBest(){const b=store.get("best");$("home-best").textContent=b?`自己ベスト ${b}点`:""}
+$("btn-start").addEventListener("click",()=>{show("game");newGame()});
+$("btn-again").addEventListener("click",()=>{show("game");newGame()});
+$("btn-quit").addEventListener("click",()=>{cancelAnimationFrame(raf);G=null;homeBest();show("home")});
+$("btn-home").addEventListener("click",()=>{homeBest();show("home")});
+$("btn-cont").addEventListener("click",()=>{
+  if(G.stage<STAGES.length-1){G.stage++;newStage()}
+  else{
+    cancelAnimationFrame(raf);
+    const prev=store.get("best")||0,best=G.score>prev;if(best)store.set("best",G.score);
+    $("r-score").textContent=G.score;$("r-best").innerHTML=best&&G.score>0?'<span class="newbest">NEW BEST</span>':"";
+    $("r-pairs").textContent=G.pairsTotal;$("r-lost").textContent=G.lost;$("r-hi").textContent=Math.max(prev,G.score);
+    show("result");
+  }
+});
+
+/* ====== 起動 ====== */
+function boot(){homeBest();show("home")}
+window.claude?.hot?.snapshot?.(()=>({}));
+window.claude?.hot?.ready?window.claude.hot.ready(boot):boot();
+</script>
+</body></html>
